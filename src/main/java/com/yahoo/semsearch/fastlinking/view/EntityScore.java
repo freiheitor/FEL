@@ -16,10 +16,21 @@ public class EntityScore implements Comparable<EntityScore>{
  	public HashMap<String, Double> features;
  	public Entity entity;
 	public double score;
+	public String mention;
+	public int start;
+	public int end;
 	
- 	public EntityScore( Entity e, double d ) {
+ 	public EntityScore( Entity e, double d, String mention, int start, int end ) {
 	    this.entity = e;
 	    this.score = d;
+	    this.start = start;
+	    this.end = end;
+	    this.mention = mention;
+	}
+
+	public EntityScore( Entity e, double d) {
+		this.entity = e;
+		this.score = d;
 	}
 	
 	@Override

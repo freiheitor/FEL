@@ -66,7 +66,8 @@ public class EntityContextFastEntityLinker extends FastEntityLinker {
                         new Switch( "centroid", 'c', "centroid", "Use centroid-based distances and not LR" ),
                         new FlaggedOption( "map", JSAP.STRING_PARSER, JSAP.NO_DEFAULT, JSAP.NOT_REQUIRED, 'm', "map", "Entity 2 type mapping " ),
                         new FlaggedOption( "threshold", JSAP.STRING_PARSER, "-20", JSAP.NOT_REQUIRED, 'd', "threshold", "Score threshold value " ),
-                        new FlaggedOption( "entities", JSAP.STRING_PARSER, JSAP.NO_DEFAULT, JSAP.REQUIRED, 'e', "entities", "Entities word vectors file" ), }
+                        new FlaggedOption( "entities", JSAP.STRING_PARSER, JSAP.NO_DEFAULT, JSAP.REQUIRED, 'e', "entities", "Entities word vectors file" ),
+                }
         );
 
         JSAPResult jsapResult = jsap.parse( args );
@@ -107,7 +108,7 @@ public class EntityContextFastEntityLinker extends FastEntityLinker {
             long time = -System.nanoTime();
             try {
                 List<EntityResult> results = linker.getResults( q, threshold );
-                //List<EntityResult> results = linker.getResultsGreedy( q, 5 );
+//                List<EntityResult> results = linker.getResultsGreedy( q, threshold );
                 //int rank = 0;
 
 

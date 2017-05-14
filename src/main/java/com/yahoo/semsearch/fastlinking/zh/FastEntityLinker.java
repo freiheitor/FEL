@@ -2,16 +2,9 @@
  Copyright 2016, Yahoo Inc.
  Licensed under the terms of the Apache License 2.0. See LICENSE file at the project root for terms.
  **/
-package com.yahoo.semsearch.fastlinking;
+package com.yahoo.semsearch.fastlinking.zh;
 
 import Util.DataUtil;
-import it.unimi.dsi.fastutil.io.BinIO;
-
-import java.io.*;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.yahoo.semsearch.fastlinking.entityranker.CandidateRanker;
 import com.yahoo.semsearch.fastlinking.entityranker.EntityRelevanceJudgment;
 import com.yahoo.semsearch.fastlinking.entityranker.NPMIRanker;
@@ -20,13 +13,13 @@ import com.yahoo.semsearch.fastlinking.hash.AbstractEntityHash;
 import com.yahoo.semsearch.fastlinking.hash.CountAndRecordStats;
 import com.yahoo.semsearch.fastlinking.hash.QuasiSuccinctEntityHash;
 import com.yahoo.semsearch.fastlinking.utils.Normalize;
-import com.yahoo.semsearch.fastlinking.view.CandidatesInfo;
-import com.yahoo.semsearch.fastlinking.view.EmptyContext;
-import com.yahoo.semsearch.fastlinking.view.Entity;
-import com.yahoo.semsearch.fastlinking.view.EntityContext;
-import com.yahoo.semsearch.fastlinking.view.EntityScore;
-import com.yahoo.semsearch.fastlinking.view.EntitySpan;
-import com.yahoo.semsearch.fastlinking.view.Span;
+import com.yahoo.semsearch.fastlinking.view.*;
+import it.unimi.dsi.fastutil.io.BinIO;
+
+import java.io.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Entity linker class. this class uses an AbstractEntityHash to select candidates and proxies the scoring of
@@ -88,31 +81,33 @@ public class FastEntityLinker {
                     System.out.println("current time(ms): "+ current_time);
                     System.out.println("total time(ms): "+ total_time);
                 }
-                if (qa_num % 100 == 0){
+                if (qa_num % 1000 == 0){
                     System.out.println("line: "+Integer.toString(qa_num));
                 }
                 qa_num++;
-                String [] qa_line_array = qa_line.split("\t");
-                if (qa_line_array.length != 2){
+                String [] qa_line_arr = qa_line.split("\t");
+                if (qa_line_arr.length < 2){
                     continue;
                 }
+                String []qa_new = {qa_line_arr[0].replaceAll("question:",""),qa_line_arr[1].replaceAll("answer:","") };
                 try {
                     Set<CharSequence> ent_linked_set = new HashSet<>();
-                    for(int i = 0;i < qa_line_array.length; i++) {
+                    String qa_ent = qa_line_arr[0]+'\t'+qa_line_arr[1];
+                    for(int i = 0;i < qa_new.length; i++) {
 
-                        if(qa_line_array[i].split(" ").length > 50){
+                        if(qa_new[i].split(" ").length > 50){
                             System.out.println("line: "+Integer.toString(qa_num));
-                            System.out.println(qa_line_array[i]);
+                            System.out.println(qa_new[i]);
                             continue;
                         }
 
 
                         String type = "\t";
-                        if (i == 0){type += "ques_ent";}
-                        else if(i == 1){type += "ans_ent";}
+                        if (i == 0){type += "question_ent";}
+                        else if(i == 1){type += "answer_ent";}
 
     //                    List<EntityResult> results = fel.getResultsGreedy(qa_line_array[i], 3);  //50
-                        List<EntityResult> results = fel.getResults( qa_line_array, i, threshold, ent_linked_set );
+                        List<EntityResult> results = fel.getResults( qa_new, i, threshold, ent_linked_set );
 
                         Iterator<EntityResult> it = results.iterator();
                         int j = -1;
@@ -123,15 +118,15 @@ public class FastEntityLinker {
                             double score = er.score;
                             CharSequence ent = er.text;
                             if (score > -3){
-                                qa_line += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
+                                qa_ent += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
                                 ent_linked_set.add(ent);
                             }
                             else if(score > -5 && j < 2){
-                                qa_line += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
+                                qa_ent += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
                                 ent_linked_set.add(ent);
                             }
                             else if(score > -7 && j < 1 ){
-                                qa_line += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
+                                qa_ent += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
                                 ent_linked_set.add(ent);
                             }
                             else {
@@ -139,10 +134,10 @@ public class FastEntityLinker {
                             }
                         }
                     }
-                    if((!qa_line.contains("question_ent")) || (!qa_line.contains("answer_ent"))){
+                    if((!qa_ent.contains("question_ent")) || (!qa_ent.contains("answer_ent"))){
                         continue;
                     }
-                    qa_ent_list.add(qa_line);
+                    qa_ent_list.add(qa_ent);
                 }
                 catch (Exception e) {
                     e.printStackTrace();
@@ -181,13 +176,13 @@ public class FastEntityLinker {
         this((QuasiSuccinctEntityHash)BinIO.loadObject(hashFile), new EmptyContext());
     }
     
-    public FastEntityLinker( AbstractEntityHash hash, EntityContext context ) {
+    public FastEntityLinker(AbstractEntityHash hash, EntityContext context ) {
         this.hash = hash;
         this.ranker = new ProbabilityRanker( ( QuasiSuccinctEntityHash ) hash );
         this.context = context;
     }
 
-    public FastEntityLinker( AbstractEntityHash hash, CountAndRecordStats stats, EntityContext context ) {
+    public FastEntityLinker(AbstractEntityHash hash, CountAndRecordStats stats, EntityContext context ) {
         this.hash = hash;
         this.ranker = new ProbabilityRanker( ( QuasiSuccinctEntityHash ) hash );
         this.context = context;
@@ -232,7 +227,7 @@ public class FastEntityLinker {
     public List<EntityResult> getResults( final String[] q_a, final int qa_index, final double threshold, Set<CharSequence> ent_set ) {
         List<EntityResult> res = new ArrayList<>();
         if (q_a.length != 2){
-            return  res;
+            return res;
         }
         final String question = q_a[0];
         final String query = q_a[qa_index];

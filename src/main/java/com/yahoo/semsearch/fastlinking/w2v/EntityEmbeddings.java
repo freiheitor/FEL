@@ -372,7 +372,7 @@ public class EntityEmbeddings extends Configured implements Tool {
 
     public static void main( String[] args ) throws Exception {
         int res = ToolRunner.run( new Configuration(), new EntityEmbeddings(), args );
-        //standalonemain( args );
+        standalonemain( args );
         System.exit( res );
     }
 }

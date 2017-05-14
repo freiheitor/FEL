@@ -1,16 +1,10 @@
-/**
- Copyright 2016, Yahoo Inc.
- Licensed under the terms of the Apache License 2.0. See LICENSE file at the project root for terms.
- **/
-package com.yahoo.semsearch.fastlinking;
+package com.yahoo.semsearch.fastlinking.zh;
 
 import Util.DataUtil;
 import it.unimi.dsi.fastutil.io.BinIO;
 
 import java.io.*;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.yahoo.semsearch.fastlinking.entityranker.CandidateRanker;
 import com.yahoo.semsearch.fastlinking.entityranker.EntityRelevanceJudgment;
@@ -36,7 +30,7 @@ import com.yahoo.semsearch.fastlinking.view.Span;
  * @author roi blanco
  * @see <a href="http://www.dc.fi.udc.es/~roi/publications/wsdm2015.pdf/">fast entity linking on queries</a>
  */
-public class FastEntityLinker {
+public class FastEntityLinker_command {
 
 
     protected EntityContext context;
@@ -50,144 +44,26 @@ public class FastEntityLinker {
     private EntityScore nilCandidate = new EntityScore( nilEntity, nilValueOne );
     private final Entity[] emptyEntities = new Entity[ 0 ];
 
-
     /**
-     * Main method providing a simple command-line input linker
-     *
-     * @param args command line args
-     * @throws Exception
-     */
-    public static void main( String args[] ) throws Exception {
-        System.out.println("FastEntityLinker start:");
-        String qa_fold = args[1];
-        double threshold = -10;//-30;
-        QuasiSuccinctEntityHash hash = ( QuasiSuccinctEntityHash ) BinIO.loadObject( args[ 0 ] );
-        DataUtil dataUtil = new DataUtil();
-        ArrayList<String> qa_ent_list = new ArrayList<>();
-        ArrayList<String> qa_list = new ArrayList<>();
-//        dataUtil.readLines(args[1], qa_list);
-        FastEntityLinker fel = new FastEntityLinker( hash, new EmptyContext() );
-        int qa_num = 0;
-
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new FileReader(new File(args[1])));
-            String qa_line = null;
-            long endTime = System.currentTimeMillis();
-            long total_time = 0;
-
-            while ((qa_line = reader.readLine()) != null) {
-//        for(String qa_line : qa_list){
-                if (qa_num % 5000 == 0){
-                    long startTime = endTime;
-                    endTime = System.currentTimeMillis();
-                    long current_time = endTime - startTime;
-                    total_time += current_time;
-                    System.out.println("*****************************************");
-                    System.out.println("calculate qa line: "+ Integer.toString(qa_num));
-                    System.out.println("current time(ms): "+ current_time);
-                    System.out.println("total time(ms): "+ total_time);
-                }
-                if (qa_num % 100 == 0){
-                    System.out.println("line: "+Integer.toString(qa_num));
-                }
-                qa_num++;
-                String [] qa_line_array = qa_line.split("\t");
-                if (qa_line_array.length != 2){
-                    continue;
-                }
-                try {
-                    Set<CharSequence> ent_linked_set = new HashSet<>();
-                    for(int i = 0;i < qa_line_array.length; i++) {
-
-                        if(qa_line_array[i].split(" ").length > 50){
-                            System.out.println("line: "+Integer.toString(qa_num));
-                            System.out.println(qa_line_array[i]);
-                            continue;
-                        }
-
-
-                        String type = "\t";
-                        if (i == 0){type += "ques_ent";}
-                        else if(i == 1){type += "ans_ent";}
-
-    //                    List<EntityResult> results = fel.getResultsGreedy(qa_line_array[i], 3);  //50
-                        List<EntityResult> results = fel.getResults( qa_line_array, i, threshold, ent_linked_set );
-
-                        Iterator<EntityResult> it = results.iterator();
-                        int j = -1;
-                        while (it.hasNext()){
-//                        for (int j = 0; j < results.size() ; j++) {
-                            j++;
-                            EntityResult er = it.next();
-                            double score = er.score;
-                            CharSequence ent = er.text;
-                            if (score > -3){
-                                qa_line += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
-                                ent_linked_set.add(ent);
-                            }
-                            else if(score > -5 && j < 2){
-                                qa_line += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
-                                ent_linked_set.add(ent);
-                            }
-                            else if(score > -7 && j < 1 ){
-                                qa_line += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
-                                ent_linked_set.add(ent);
-                            }
-                            else {
-                                break;
-                            }
-                        }
-                    }
-                    if((!qa_line.contains("question_ent")) || (!qa_line.contains("answer_ent"))){
-                        continue;
-                    }
-                    qa_ent_list.add(qa_line);
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-//        System.out.println("qa not end num: "+Integer.toString(not_end_num));
-        dataUtil.writeLines(args[2],qa_ent_list);
-    }
-
-
-    
-    /** 
      * No-args constructor for Kappa.
      */
-    protected FastEntityLinker() { }
-    
-    /** 
+    protected FastEntityLinker_command() { }
+
+    /**
      * Constructor for FEL without context. Used by Kappa.
      * @param hashFile
      */
-    public FastEntityLinker(String hashFile) throws ClassNotFoundException, IOException {
+    public FastEntityLinker_command(String hashFile) throws ClassNotFoundException, IOException {
         this((QuasiSuccinctEntityHash)BinIO.loadObject(hashFile), new EmptyContext());
     }
-    
-    public FastEntityLinker( AbstractEntityHash hash, EntityContext context ) {
+
+    public FastEntityLinker_command( AbstractEntityHash hash, EntityContext context ) {
         this.hash = hash;
         this.ranker = new ProbabilityRanker( ( QuasiSuccinctEntityHash ) hash );
         this.context = context;
     }
 
-    public FastEntityLinker( AbstractEntityHash hash, CountAndRecordStats stats, EntityContext context ) {
+    public FastEntityLinker_command( AbstractEntityHash hash, CountAndRecordStats stats, EntityContext context ) {
         this.hash = hash;
         this.ranker = new ProbabilityRanker( ( QuasiSuccinctEntityHash ) hash );
         this.context = context;
@@ -209,6 +85,10 @@ public class FastEntityLinker {
         public double score;
         public short type;
 
+        public String mention;
+        public int men_start;
+        public int men_end;
+
         private EntityResult( Span s, CharSequence text, int id, double score, short type ) {
             this.id = id;
             this.text = text;
@@ -217,89 +97,23 @@ public class FastEntityLinker {
             this.type = type;
         }
 
+        private EntityResult( Span s, CharSequence text, int id, double score, short type, String mention, int men_start, int men_end ) {
+            this.id = id;
+            this.text = text;
+            this.s = s;
+            this.score = score;
+            this.type = type;
+
+            this.mention = mention;
+            this.men_start = men_start;
+            this.men_end = men_end;
+        }
+
         @Override
         public int compareTo( EntityResult o ) {
             return -Double.compare( score, o.score );
         }
     }
-
-    /**
-     * Given a query and a threshold, segments the query, detects the candidates and scores them. Returns a candidate only if it is above the threshold
-     *
-\     * @param threshold score threshold
-     * @return list of entity results for the query that score above the given threshold
-     */
-    public List<EntityResult> getResults( final String[] q_a, final int qa_index, final double threshold, Set<CharSequence> ent_set ) {
-        List<EntityResult> res = new ArrayList<>();
-        if (q_a.length != 2){
-            return  res;
-        }
-        final String question = q_a[0];
-        final String query = q_a[qa_index];
-        ArrayList<EntitySpan> entityAnnotation = getBestChunking( query, ranker, context );
-        for( EntitySpan span : entityAnnotation ) {
-            if( span.e.id != -1 ) {
-
-                Entity e = span.e;
-                double span_word_num = countWordNum(span.toString(),"\\s");
-                CharSequence text = hash.getEntityName( e.id );
-                String [] ent_front = text.toString().split("%");
-                String ent = ent_front[0];
-                if(ent.endsWith("_")){
-                    ent = ent.substring(0, ent.length()-1);
-                }
-                double ent_word_num = countWordNum(ent,"_");
-                double score_new = span.score/(1.0+(span_word_num+ent_word_num)/20.0);
-
-                // ent与问句开始相同
-                if (qStartEnt(question, ent)){
-                    continue;
-                }
-
-                // 数字
-                if (isANumber(ent)){
-                    continue;
-                }
-
-                if (span.span.length() < 4 && ent.length() < 4){
-                    if(!isANumber(ent)){
-                        continue;
-                    }
-                }
-
-                if( span.score > threshold ) res.add( new EntityResult( span, text, e.id, score_new, e.type ) );
-            }
-        }
-        Collections.sort( res );
-        filterRepeatEnt(res, ent_set);
-        return res;
-    }
-
-    public static boolean isNumeric(String str){
-        Pattern pattern = Pattern.compile("[0-9.]*");
-        return pattern.matcher(str).matches();
-    }
-
-
-    /**
-     * 过滤mention指向重复的ent，问题中ent不重复，答案不链上问题中出现过的ent
-     * @param res_
-     * @param ent_set_
-     */
-    public static void filterRepeatEnt(List<EntityResult> res_, Set<CharSequence> ent_set_){
-        Iterator<EntityResult> iter = res_.iterator();
-        while(iter.hasNext()){
-            EntityResult er = iter.next();
-            CharSequence cs = er.text;
-            if(ent_set_.contains(cs)){
-                iter.remove();
-            }
-            ent_set_.add(cs);
-        }
-        ent_set_.clear();
-    }
-
-
 
     /**
      * Given a query and a threshold, segments the query, detects the candidates and scores them. Returns a candidate only if it is above the threshold
@@ -315,38 +129,11 @@ public class FastEntityLinker {
             if( span.e.id != -1 ) {
                 Entity e = span.e;
                 CharSequence text = hash.getEntityName( e.id );
-                if( span.score > threshold ) res.add( new EntityResult( span, text, e.id, span.score, e.type ) );
+                if( span.score > threshold ) res.add( new EntityResult( span, text, e.id, span.score, e.type) );
             }
         }
         Collections.sort( res );
         return res;
-    }
-
-    /**
-     * calculate space
-     * @param str
-     * @return
-     */
-    public static int countWordNum(String str, String seg) {
-        int count = 0;
-        Pattern p = Pattern.compile(seg);//"\\s"
-        Matcher m = p.matcher(str);
-        while(m.find()){
-            count++;
-        }
-        return count;
-    }
-
-
-    public static boolean qStartEnt(String question, String ent){
-        question =question.toLowerCase();
-        ent = ent.toLowerCase().replace("_"," ");
-        if (question.startsWith(ent)){
-            return true;
-        }
-        else {
-            return false;
-        }
     }
 
     /**
@@ -621,6 +408,20 @@ public class FastEntityLinker {
         return context;
     }
 
+    /**
+     *  字符转字符数组
+     * @param str
+     * @return
+     */
+    public static String[] str2StrArr(String str){
+        char [] charArr = str.toCharArray();
+        String [] strArr = new String[charArr.length];
+        for (int i=0; i<charArr.length; i++){
+            strArr[i] = String.valueOf(charArr[i]);
+        }
+        return strArr;
+    }
+
 
     /**
      * Generates a number of candidates per spot for a given query and scores them using the previously set ranker
@@ -630,9 +431,11 @@ public class FastEntityLinker {
      * @param context           class to score the context
      * @return all candidates found in the input query
      */
-    public ArrayList<EntityScore> generateAllCandidates( String q, int candidatesPerSpot, EntityContext context ) {
+    public int stop_num = 0;
+    public ArrayList<EntityScore> generateAllCandidates( String q, int candidatesPerSpot, EntityContext context, Map<String, Integer> stop_word, int menMaxEnt ) {
         ArrayList<EntityScore> allCandidates = new ArrayList<EntityScore>();
-        String parts[] = Normalize.normalize( q ).split( "\\s+" );
+//        String parts[] = Normalize.normalize( q ).split( "\\s+" );
+        String parts[] = str2StrArr(q);//String parts[] = str2StrArr(Normalize.normalize( q ));
         final int l = parts.length;
         ArrayList<String> ctxWords = new ArrayList<String>();
         Collections.addAll( ctxWords, parts );
@@ -643,41 +446,260 @@ public class FastEntityLinker {
                 text.append( parts[ j ] );
                 CandidatesInfo infos = hash.getCandidatesInfo( text.toString() );
                 if( infos != null ) {
-                    ArrayList<EntityScore> score = ranker.getTopKEntities( infos, context, q, ( j - i ), candidatesPerSpot );
+                    String mention = q.substring(i, j+1);
+                    if (stop_word.containsKey(mention)){
+                        if(++stop_num % 10000 == 0) {
+                            System.out.println("stop word mum:" + stop_num);
+                        }
+                        continue;
+                    }
+                    if (mention.length() < 2 ){
+                        continue;
+                    }
+                    List<EntityScore> score = ranker.getTopKEntities( infos, context, q, ( j - i ), candidatesPerSpot, mention, i, j+1); //[i, j+1)
+                    Collections.sort( score );
+                    if (score.size() > menMaxEnt){
+                        score = score.subList(0, menMaxEnt);
+
+                    }
+
                     allCandidates.addAll( score );
                 }
-                text.append( " " );
+//                text.append( " " );
             }
         }
         Collections.sort( allCandidates );
         return allCandidates;
     }
 
+
+
     /**
      * Generates all the possible candidates for a given query and scores them
      * This method is O(|q|^2)
      *
      * @param query input string
-     * @param k     number of top candidates to return. This number is global for the whole query. If you want k candidates per span use generateAllCandidates
+     * @param link_size     number of top candidates to return. This number is global for the whole query. If you want k candidates per span use generateAllCandidates
      * @return scores for all candidates found in the query
      */
-    public List<EntityResult> getResultsGreedy( final String query, int k ) {
+    public List<EntityResult> getResultsGreedy( final String query, int link_size, double threashod, int menMaxEnt, Map<String, Integer> stop_word ) {
         List<EntityResult> res = new ArrayList<EntityResult>();
-        ArrayList<EntityScore> scores = generateAllCandidates( query, k, context );
+        ArrayList<EntityScore> scores = generateAllCandidates( query, link_size, context, stop_word, menMaxEnt );
         int i = 0;
-        while( i < k && i < scores.size() ) {
+        while( i < link_size && i < scores.size() ) {
             EntityScore s = scores.get( i );
             CharSequence n = hash.getEntityName( s.entity.id );
-            if( !Double.isNaN( s.score ) ) {
-                res.add( new EntityResult( new EntitySpan( query ), n, s.entity.id, s.score, s.entity.type ) );
+            if( !Double.isNaN( s.score ) && s.score > threashod) {
+                res.add( new EntityResult( new EntitySpan( query ), n, s.entity.id, s.score, s.entity.type, s.mention, s.start, s.end ) );
             } else {
-                k++;
+                link_size++;
             }
             i++;
         }
         return res;
     }
 
+    /**
+     * Main method providing a simple command-line input linker
+     *
+     * @param args command line args
+     * @throws Exception
+     */
+    public static void main( String args[] ) throws Exception {
+        double threshold = -8;  // 阈值
+        int maxEnt = 10;  // 链接实体的最大数目
+        int menMaxEnt = 4; // 一个mention链接的实体数目
+        QuasiSuccinctEntityHash hash = (QuasiSuccinctEntityHash) BinIO.loadObject(args[0]);
+        final BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        String q;
+        FastEntityLinker_command fel = new FastEntityLinker_command(hash, new EmptyContext());
+        Map<String, Integer> stop_word = new HashMap<>();
+        ArrayList<String> qa_ent_list = new ArrayList<>();
+        ArrayList<String> qa_ent_split_list = new ArrayList<>();
+        readLines(args[1], stop_word);
+        if (args.length < 4) {
+            for (; ; ) {
+                System.out.print("please input string>");
+                q = br.readLine();
+                if (q == null) {
+                    System.err.println();
+                    break; // CTRL-D
+                }
+                if (q.length() == 0) continue;
+                String[] parts = q.split("\t");
+                q = parts[0];
+                String loc = "";
+                if (parts.length > 1) {
+                    q = parts[0];
+                    loc = parts[1];
+                }
+
+                long time = -System.nanoTime();
+                try {
+                    List<EntityResult> results = fel.getResultsGreedy(q, maxEnt, threshold, menMaxEnt, stop_word);
+                    //List<EntityResult> results = fel.getResults( q, threshold );
+                    for (EntityResult er : results) {
+//                    System.out.println( q + "\t" + loc + "\t" + er.text + "\t" + er.score + "\t" + er.id );
+                        System.out.println(q + "\t" + er.mention + ":[" + er.men_start + ", " + er.men_end + ")->" + java.net.URLDecoder.decode(CharSeq2Str(er.text)) + "\t" + er.score + "\t" + er.id);
+
+                    }
+                    time += System.nanoTime();
+//                System.out.println( "Time to rank and print the candidates:" + time / 1000000. + " ms" );
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            String qa_file = args[2];
+            int qa_num = 0;
+            BufferedReader reader = null;
+            try {
+                reader = new BufferedReader(new FileReader(new File(qa_file)));
+                String qa_line = null;
+                long endTime = System.currentTimeMillis();
+                long total_time = 0;
+
+                while ((qa_line = reader.readLine()) != null) {
+//        for(String qa_line : qa_list){
+                    if (qa_num % 5000 == 0){
+                        long startTime = endTime;
+                        endTime = System.currentTimeMillis();
+                        long current_time = endTime - startTime;
+                        total_time += current_time;
+                        System.out.println("*****************************************");
+                        System.out.println("calculate qa line: "+ Integer.toString(qa_num));
+                        System.out.println("current time(ms): "+ current_time);
+                        System.out.println("total time(ms): "+ total_time);
+                    }
+                    if (qa_num % 1000 == 0){
+                        System.out.println("qa line: "+Integer.toString(qa_num));
+                    }
+                    qa_num++;
+                    String [] qa_line_arr = qa_line.split("\t");
+                    if (qa_line_arr.length < 2){
+                        continue;
+                    }
+                    String []qa_new = {qa_line_arr[0].replaceAll("question:",""),qa_line_arr[1].replaceAll("answer:","") };
+                    try {
+                        Set<CharSequence> ent_linked_set = new HashSet<>();
+                        String qa_ent = qa_line_arr[0]+'\t'+qa_line_arr[1];
+                        for(int i = 0;i < qa_new.length; i++) {
+
+                            if(qa_new[i].split(" ").length > 50){
+                                System.out.println("line: "+Integer.toString(qa_num));
+                                System.out.println(qa_new[i]);
+                                continue;
+                            }
+
+
+                            String type = "\t";
+                            if (i == 0){type += "question_ent";}
+                            else if(i == 1){type += "answer_ent";}
+
+                            //                    List<EntityResult> results = fel.getResultsGreedy(qa_line_array[i], 3);  //50
+//                          List<EntityResult> results = fel.getResults( qa_new, i, threshold, ent_linked_set );
+                            List<EntityResult> results = fel.getResultsGreedy( qa_new[i], maxEnt, threshold, menMaxEnt, stop_word );
+
+                            Iterator<EntityResult> it = results.iterator();
+                            int j = -1;
+                            while (it.hasNext()){
+//                        for (int j = 0; j < results.size() ; j++) {
+                                j++;
+                                EntityResult er = it.next();
+                                double score = er.score;
+                                CharSequence ent = er.text;
+                                // 合并輸出
+                                String result = type+Integer.toString(j)+"->"+er.mention + "->[" + er.men_start + ", " + er.men_end + ")->" + java.net.URLDecoder.decode(CharSeq2Str(er.text)) + "->" + String.format("%.2f", score) + "->" + er.id;
+                                qa_ent += result;
+                                //单独输出
+                                qa_ent_split_list.add(qa_line_arr[i]+"\t"+result);
+
+
+//                                if (score > -3){
+//                                    qa_ent += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
+//                                    ent_linked_set.add(ent);
+//                                }
+//                                else if(score > -5 && j < 2){
+//                                    qa_ent += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
+//                                    ent_linked_set.add(ent);
+//                                }
+//                                else if(score > -7 && j < 1 ){
+//                                    qa_ent += type+Integer.toString(j)+":"+er.s+"->"+ent+"\t" + (String.format("%.2f", score));// + "\t" + er.id+"\t"+er.type;
+//                                    ent_linked_set.add(ent);
+//                                }
+//                                else {
+//                                    break;
+//                                }
+                            }
+                        }
+                        if((!qa_ent.contains("question_ent")) && (!qa_ent.contains("answer_ent"))){
+                            continue;
+                        }
+                        qa_ent_list.add(qa_ent);
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (reader != null) {
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+//        System.out.println("qa not end num: "+Integer.toString(not_end_num));
+            DataUtil.writeLines(args[3],qa_ent_list);
+            DataUtil.writeLines(args[3]+"_split", qa_ent_split_list);
+
+
+        }
+    }
+
+    public static String CharSeq2Str(CharSequence charSequence){
+        final StringBuilder sb = new StringBuilder(charSequence.length());
+        sb.append(charSequence);
+        return sb.toString();
+    }
+
+    public static void readLines(String file, Map<String,Integer> lines) {
+        BufferedReader reader = null;
+        int ID=0;
+
+        try {
+
+            reader = new BufferedReader(new FileReader(new File(file)));
+
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                if (ID%1000000==0){
+                    System.out.println("primary load data number:"+ID);
+                }
+                lines.put(line,ID);
+                ID++;
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     /**
      * Given a list of entity relevance judgments returns the EntityRelevanceJudgment for a given entity

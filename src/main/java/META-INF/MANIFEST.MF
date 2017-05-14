@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: com.yahoo.semsearch.fastlinking.zh.FastEntityLinker_comman
+ d
+
